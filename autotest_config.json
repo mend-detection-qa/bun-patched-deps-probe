@@ -1,0 +1,34 @@
+{
+  "description": "Autotest config for bun-patched-deps-probe — Tier 4 / entry #15 of docs/BUN_COVERAGE_PLAN.md. §3 features D3 (patchedDependencies top-level field) + S5 (patch: protocol on dep value). Direct: is-odd@3.0.1 (patched via field), is-even@1.0.0 (patched via protocol). Transitives: is-number@6.0.0, is-odd@0.1.2, is-number@3.0.0, kind-of@3.2.2, is-buffer@1.1.6.",
+  "version": 1.8,
+  "base_config": {
+    "branch": null,
+    "validate_scan_output": true,
+    "scan_output": {"security_scan_report_conclusion": "success", "total_libs_scanned": {"gte": 2}, "expected_messages": []},
+    "validate_dependency_tree": true,
+    "dependency_tree": {
+      "check_dependency_tree_detection_status": true,
+      "check_update_request_sca_results": true,
+      "expected_total_dependencies_number": {"gte": 2},
+      "expected_direct_dependencies_number": {"gte": 1},
+      "expected_transitive_dependencies_number": {"gte": 0},
+      "direct_dependencies_names_list": {"contains": ["is-odd"]},
+      "transitive_dependencies_names_list": {"contains": []},
+      "expected_package_managers": {"contains": ["bun"]},
+      "validate_agent_versions": true,
+      "expected_agent_version": "",
+      "expected_plugin_version": "",
+      "validate_mend_tags": false,
+      "validate_checksums": false,
+      "checksums_config": {"check_sha1_not_empty": false, "check_sha1_format": false, "check_sha1_consistency": false, "check_checksums_by_formula": false, "expected_dependency_checksums": []}
+    },
+    "validate_vulnerabilities_table": true,
+    "vulnerabilities_table": {"check_vulnerabilities_table_structure": true, "expected_total_vulnerabilities_number": {"gte": 0}, "vulnerabilities_ids_list": {"contains": []}, "vulnerabilities_names_list": {"contains": []}},
+    "validate_scanner_logs": false,
+    "logs": {"check_scanner_logs": true, "detect_secrets": false, "check_external_logs": false, "expected_log_lines": []},
+    "validate_reachability": false,
+    "reachability": {"check_reachability_status": true, "validate_issues": false, "expected_reachable_cves": {"contains": []}, "expected_unreachable_cves": {"contains": []}, "expected_reachable_libraries": {"contains": []}, "expected_unreachable_libraries": {"contains": []}, "expected_total_reachable_count": {"gte": 0}, "expected_total_unreachable_count": {"gte": 0}, "expected_reachability_traces": []},
+    "validate_project_contributors": true,
+    "contributors": {"check_contributors_structure": true, "expected_contributors": [], "expected_min_commits": {"gte": 1}, "expected_total_contributors": {}}
+  }
+}
