@@ -1,0 +1,127 @@
+// Bun lockfile — text JSONC format (Bun 1.1+).
+// Generated for bun-patched-deps-probe.
+//
+// This lockfile exercises TWO distinct Bun patch mechanisms:
+//
+//   MECHANISM 1 — patchedDependencies (D3, top-level package.json field, Bun 1.1+):
+//     "is-odd@3.0.1" is declared in package.json "patchedDependencies" alongside
+//     a normal semver dep "is-odd": "^3.0.1".  Bun records the patch reference
+//     in the workspaces block and resolves the package from the registry at
+//     version 3.0.1, then applies the patch at install time.
+//
+//   MECHANISM 2 — patch: protocol (S5, dep value using the patch: protocol):
+//     "is-even" is declared as "patch:is-even@1.0.0#./patches/is-even.patch".
+//     Bun records this with a "patch" descriptor inside the package entry.
+//     The resolved version is still 1.0.0 — the patch does not shift the version.
+//
+// Both mechanisms leave the package versions unchanged:
+//   - is-odd is still 3.0.1  (patch is applied on top, version not bumped)
+//   - is-even is still 1.0.0 (patch is applied on top, version not bumped)
+//
+// Mend must detect BOTH mechanisms.  Failure modes:
+//   A) Mend ignores patchedDependencies → is-odd reported as plain registry dep
+//      with no patch annotation in the dep tree.
+//   B) Mend ignores patch: protocol → is-even reported as plain registry dep
+//      or resolved version wrong.
+//   C) Mend fails to parse the "patch" descriptor block → is-even dropped entirely.
+//
+// Transitive deps (not patched):
+//   is-odd@3.0.1  → is-number@6.0.0  (no further deps)
+//   is-even@1.0.0 → is-odd@0.1.2     → is-number@3.0.0 → kind-of@3.2.2 → is-buffer@1.1.6
+//
+{
+  "lockfileVersion": 1,
+
+  // workspaces: root-only project (no monorepo members).
+  // patchedDependencies records is-odd@3.0.1 → the patch file path.
+  // This is MECHANISM 1: the top-level patchedDependencies field.
+  "workspaces": {
+    "": {
+      "name": "bun-patched-deps-probe",
+      "dependencies": {
+        // Normal semver dep — also referenced in patchedDependencies below.
+        "is-odd": "^3.0.1",
+        // patch: protocol dep — MECHANISM 2.
+        // Syntax: patch:<name>@<version>#<path-to-patch-file>
+        "is-even": "patch:is-even@1.0.0#./patches/is-even.patch",
+      },
+      // patchedDependencies: MECHANISM 1 top-level field (Bun 1.1+, analogous to pnpm).
+      // Associates is-odd@3.0.1 with the patch file at patches/is-odd.patch.
+      // Mend must read this field and annotate is-odd in the dep tree accordingly.
+      "patchedDependencies": {
+        "is-odd@3.0.1": "patches/is-odd.patch",
+      },
+    },
+  },
+
+  "packages": {
+
+    // --- MECHANISM 1: patchedDependencies top-level field ---
+    // is-odd@3.0.1 resolved from npm registry; patch applied via patchedDependencies.
+    // The package entry itself looks like a normal registry entry — the patch
+    // annotation lives in workspaces[].patchedDependencies above.
+    // Transitive dep: is-number@^6.0.0 → resolves to 6.0.0
+    "is-odd": ["is-odd@3.0.1", {
+      "dependencies": {
+        "is-number": "^6.0.0",
+      },
+    }, "sha512-CQpnWPrDwmP1+SMHXZhtLtJv90yiyVfluGsX5iNCVkrhQtU3TQHsUWPG9wkdk9Lgd5yNpAg9jQEo90CBaXgWMA=="],
+
+    // --- MECHANISM 2: patch: protocol on dep value ---
+    // is-even is declared as "patch:is-even@1.0.0#./patches/is-even.patch" in the manifest.
+    // Bun records this with a "patch" descriptor block inside the package tuple.
+    // The "patch" block carries:
+    //   - "path": the patch file relative to the project root
+    //   - "resolved": the underlying registry package info (name@version)
+    // The resolved version is still 1.0.0 — the patch: protocol does not bump the version.
+    // Transitive dep: is-odd@^0.1.2 → resolves to is-odd@0.1.2 (registry copy, distinct from root)
+    "is-even": ["is-even@patch:is-even@1.0.0#./patches/is-even.patch", {
+      "version": "1.0.0",
+      "patch": {
+        "path": "./patches/is-even.patch",
+        "resolved": "is-even@1.0.0",
+      },
+      "dependencies": {
+        "is-odd": "^0.1.2",
+      },
+    }],
+
+    // --- Transitives of is-odd@3.0.1 ---
+
+    // is-number@6.0.0 — transitive of is-odd@3.0.1 (mechanism 1 dep).
+    // is-number@6.0.0 has zero production deps.
+    "is-number@6.0.0": ["is-number@6.0.0", {}, "sha512-Wu1VHeILBK8KAWJUAiSZQX94GmOE45Rg6/538fKwiloUu21KncEkYGPqob2oSZ5mUT73vLGrHQjKw3KMPwfDzg=="],
+
+    // --- Transitives of is-even@1.0.0 (mechanism 2 dep) ---
+
+    // is-odd@0.1.2 — transitive of is-even@1.0.0.
+    // This is a DIFFERENT is-odd than the root dep above (registry copy at 0.1.2).
+    // is-odd@0.1.2 has one dep: is-number@^3.0.0 → resolves to 3.0.0
+    "is-odd@0.1.2": ["is-odd@0.1.2", {
+      "dependencies": {
+        "is-number": "^3.0.0",
+      },
+    }, "sha512-Z6qJ/D0ZgzrVCKTQJBQPqQRQ6T/SZO1yNRFBblHHZAzELILH4Tep/B8nqBFNKjDsGnNJPbdQrwbLB4tUFtKA=="],
+
+    // is-number@3.0.0 — transitive of is-odd@0.1.2.
+    // is-number@3.0.0 has one dep: kind-of@^3.0.2 → resolves to 3.2.2
+    "is-number@3.0.0": ["is-number@3.0.0", {
+      "dependencies": {
+        "kind-of": "^3.0.2",
+      },
+    }, "sha512-cnHqvFMp2sRb5RZFK5LM/Hs7pJEFDz6LXpCHrCTfqPaJEkbBJQiZT6TXIpCfNXhNGr0bxacP1jFk4MxPdm3w=="],
+
+    // kind-of@3.2.2 — transitive of is-number@3.0.0.
+    // kind-of@3.2.2 has one dep: is-buffer@^1.1.5 → resolves to 1.1.6
+    "kind-of": ["kind-of@3.2.2", {
+      "dependencies": {
+        "is-buffer": "^1.1.5",
+      },
+    }, "sha512-NOW9QQXMoZGg/oqnVNoNTTIFEIid1627WCffaed+ZkFAy4EPbFjdGb7bXzSVUPR1n6KCYRclPWCHfhEBMbNfcw=="],
+
+    // is-buffer@1.1.6 — transitive of kind-of@3.2.2.
+    // is-buffer@1.1.6 has no production deps.
+    "is-buffer": ["is-buffer@1.1.6", {}, "sha512-NcdALwpXkTm5Zvvbk7owB2drm3EgyB6ctqtIkAjVSi/qjfeesz9ow9ufz8G2TxB7Gm5h2OfdaVMFY1p2i4yMg=="],
+
+  },
+}

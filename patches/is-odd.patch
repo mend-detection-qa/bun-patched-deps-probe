@@ -1,0 +1,5 @@
+--- a/index.js
++++ b/index.js
+@@ -1 +1,2 @@
++// patched by bun-patched-deps-probe
+ module.exports = require('./node_modules/is-odd');

@@ -1,0 +1,12 @@
+{
+  "name": "bun-patched-deps-probe",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "is-odd": "^3.0.1",
+    "is-even": "patch:is-even@1.0.0#./patches/is-even.patch"
+  },
+  "patchedDependencies": {
+    "is-odd@3.0.1": "patches/is-odd.patch"
+  }
+}
