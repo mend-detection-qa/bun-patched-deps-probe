@@ -24,12 +24,12 @@
       "expected_transitive_dependencies_number": {
         "gte": 0
       },
-      "direct_dependencies_names_list": {
+      "direct_dependencies_names_list_group_id": {
         "contains": [
           "is-odd"
         ]
       },
-      "transitive_dependencies_names_list": {
+      "transitive_dependencies_names_list_group_id": {
         "contains": []
       },
       "expected_package_managers": {
